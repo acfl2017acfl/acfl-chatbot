@@ -8,7 +8,7 @@
 <style>
   body {
     font-family: Arial, sans-serif;
-    background: linear-gradient(135deg, #e85222, #ff7a45);
+    background: #e5e5e5;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -18,9 +18,10 @@
 
   .chatbox {
     background: #ffffff;
-    width: 380px;
+    width: 520px;
+    height: 720px;
     border-radius: 14px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.25);
+    box-shadow: 0 12px 30px rgba(0,0,0,0.2);
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -29,45 +30,48 @@
   .header {
     background: #e85222;
     color: #ffffff;
-    padding: 12px;
+    padding: 14px;
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
   }
 
   .header img {
-    height: 36px;
+    height: 40px;
     background: #ffffff;
     padding: 4px;
     border-radius: 6px;
   }
 
   .header-title {
-    font-size: 16px;
+    font-size: 18px;
     font-weight: bold;
   }
 
   .messages {
     flex: 1;
     overflow-y: auto;
-    padding: 15px;
-    background: #fff7f3;
+    padding: 18px;
+    background: #f7f7f7;
   }
 
   .bot, .user {
     margin: 10px 0;
-    padding: 10px 12px;
-    border-radius: 12px;
-    max-width: 85%;
+    padding: 12px 14px;
+    border-radius: 14px;
+    max-width: 80%;
     white-space: pre-line;
     font-size: 14px;
   }
 
+  /* SYSTEM / BOT MESSAGE */
   .bot {
-    background: #ffffff;
-    border-left: 4px solid #e85222;
+    background: #e6f4ea;
+    color: #1e4620;
+    border-left: 5px solid #2e7d32;
   }
 
+  /* USER MESSAGE */
   .user {
     background: #e85222;
     color: #ffffff;
@@ -75,16 +79,30 @@
     text-align: right;
   }
 
-  input {
+  .input-area {
+    display: flex;
+    border-top: 1px solid #ddd;
+  }
+
+  .input-area input {
+    flex: 1;
     padding: 14px;
     border: none;
-    border-top: 1px solid #ddd;
     font-size: 14px;
     outline: none;
   }
 
-  input::placeholder {
-    color: #999;
+  .input-area button {
+    background: #e85222;
+    color: #ffffff;
+    border: none;
+    padding: 0 22px;
+    font-size: 14px;
+    cursor: pointer;
+  }
+
+  .input-area button:hover {
+    background: #cf4a1f;
   }
 </style>
 </head>
@@ -98,7 +116,11 @@
   </div>
 
   <div class="messages" id="messages"></div>
-  <input type="text" id="input" placeholder="Type your query here..." autocomplete="off">
+
+  <div class="input-area">
+    <input type="text" id="input" placeholder="Type your query here..." autocomplete="off">
+    <button onclick="sendMessage()">Send</button>
+  </div>
 </div>
 
 <script>
@@ -108,6 +130,7 @@ const input = document.getElementById("input");
 let step = "intent";
 let detectedIntent = "";
 
+// Add message
 function addMessage(text, type) {
   const div = document.createElement("div");
   div.className = type;
@@ -136,20 +159,15 @@ function normalize(text) {
 }
 
 function detectIntent(text) {
-  let fuelMatch = 0;
-  let incentiveMatch = 0;
+  let fuel = 0;
+  let incentive = 0;
 
-  fuelKeywords.forEach(word => {
-    if (text.includes(word)) fuelMatch++;
-  });
+  fuelKeywords.forEach(w => { if (text.includes(w)) fuel++; });
+  incentiveKeywords.forEach(w => { if (text.includes(w)) incentive++; });
 
-  incentiveKeywords.forEach(word => {
-    if (text.includes(word)) incentiveMatch++;
-  });
-
-  if (fuelMatch > 0 && incentiveMatch > 0) return "AMBIGUOUS";
-  if (fuelMatch > 0) return "FUEL";
-  if (incentiveMatch > 0) return "INCENTIVE";
+  if (fuel > 0 && incentive > 0) return "AMBIGUOUS";
+  if (fuel > 0) return "FUEL";
+  if (incentive > 0) return "INCENTIVE";
   return null;
 }
 
@@ -157,58 +175,52 @@ function isValidPAC(pac) {
   return /^pac\d{6}$/i.test(pac);
 }
 
-input.addEventListener("keydown", function(e) {
-  if (e.key === "Enter" && input.value.trim() !== "") {
+function processInput(userText) {
+  addMessage(userText, "user");
 
-    const userText = input.value.trim();
-    addMessage(userText, "user");
-    input.value = "";
+  if (step === "intent") {
+    const intent = detectIntent(normalize(userText));
 
-    if (step === "intent") {
-      const cleanText = normalize(userText);
-      const intent = detectIntent(cleanText);
-
-      if (intent === "FUEL") {
-        detectedIntent = "Fuel claim related query";
-        addMessage("I understood your query as:\n✔ Fuel claim related query", "bot");
-        addMessage("Please enter your PAC ID (Example: pac001617)", "bot");
-        step = "pac";
-      }
-      else if (intent === "INCENTIVE") {
-        detectedIntent = "Incentive related query";
-        addMessage("I understood your query as:\n✔ Incentive related query", "bot");
-        addMessage("Please enter your PAC ID (Example: pac001617)", "bot");
-        step = "pac";
-      }
-      else if (intent === "AMBIGUOUS") {
-        addMessage(
-          "Your query seems related to more than one topic.\nPlease specify:\n1️⃣ Fuel\n2️⃣ Incentive",
-          "bot"
-        );
-      }
-      else {
-        addMessage(
-          "Sorry, I could not understand your query.\nPlease try again.",
-          "bot"
-        );
-      }
+    if (intent === "FUEL") {
+      detectedIntent = "Fuel claim related query";
+      addMessage("✔ Fuel claim related query identified.\nPlease enter your PAC ID (Example: pac001617)", "bot");
+      step = "pac";
     }
-    else if (step === "pac") {
-      if (isValidPAC(userText)) {
-        addMessage("✅ PAC ID accepted: " + userText.toLowerCase(), "bot");
-        addMessage(
-          "Thank you.\n" + detectedIntent + " will be processed here later.",
-          "bot"
-        );
-        step = "done";
-      } else {
-        addMessage(
-          "❌ Invalid PAC ID format.\nPlease enter again (Example: pac001617)",
-          "bot"
-        );
-      }
+    else if (intent === "INCENTIVE") {
+      detectedIntent = "✔ Incentive related query identified.";
+      addMessage("✔ Incentive related query identified.\nPlease enter your PAC ID (Example: pac001617)", "bot");
+      step = "pac";
+    }
+    else if (intent === "AMBIGUOUS") {
+      addMessage("Your query relates to multiple topics.\nPlease specify:\n1️⃣ Fuel\n2️⃣ Incentive", "bot");
+    }
+    else {
+      addMessage("Sorry, I could not understand your query.\nPlease try again.", "bot");
     }
   }
+  else if (step === "pac") {
+    if (isValidPAC(userText)) {
+      addMessage("✅ PAC ID accepted: " + userText.toLowerCase(), "bot");
+      addMessage(detectedIntent + "\nThis will be processed further in the next step.", "bot");
+      step = "done";
+    } else {
+      addMessage("❌ Invalid PAC ID format.\nPlease enter again (Example: pac001617)", "bot");
+    }
+  }
+}
+
+// Send button handler
+function sendMessage() {
+  if (input.value.trim() !== "") {
+    const text = input.value.trim();
+    input.value = "";
+    processInput(text);
+  }
+}
+
+// Enter key support
+input.addEventListener("keydown", function(e) {
+  if (e.key === "Enter") sendMessage();
 });
 </script>
 
