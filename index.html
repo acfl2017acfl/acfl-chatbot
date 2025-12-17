@@ -55,26 +55,26 @@
     background: #f7f7f7;
   }
 
-  .bot, .user {
+  /* COMMON BUBBLE STYLE (SAME FOR BOTH) */
+  .bubble {
     margin: 10px 0;
     padding: 12px 14px;
     border-radius: 14px;
     max-width: 80%;
     white-space: pre-line;
     font-size: 14px;
-  }
-
-  /* SYSTEM / BOT MESSAGE */
-  .bot {
-    background: #e6f4ea;
-    color: #1e4620;
-    border-left: 5px solid #2e7d32;
-  }
-
-  /* USER MESSAGE */
-  .user {
-    background: #e85222;
     color: #ffffff;
+  }
+
+  /* SYSTEM / BOT */
+  .bot {
+    background: #e85222;
+    text-align: left;
+  }
+
+  /* USER */
+  .user {
+    background: #2e7d32;
     margin-left: auto;
     text-align: right;
   }
@@ -130,10 +130,9 @@ const input = document.getElementById("input");
 let step = "intent";
 let detectedIntent = "";
 
-// Add message
 function addMessage(text, type) {
   const div = document.createElement("div");
-  div.className = type;
+  div.className = "bubble " + type;
   div.innerText = text;
   messages.appendChild(div);
   messages.scrollTop = messages.scrollHeight;
@@ -183,12 +182,12 @@ function processInput(userText) {
 
     if (intent === "FUEL") {
       detectedIntent = "Fuel claim related query";
-      addMessage("✔ Fuel claim related query identified.\nPlease enter your PAC ID (Example: pac001617)", "bot");
+      addMessage("Fuel claim related query identified.\nPlease enter your PAC ID (Example: pac001617)", "bot");
       step = "pac";
     }
     else if (intent === "INCENTIVE") {
-      detectedIntent = "✔ Incentive related query identified.";
-      addMessage("✔ Incentive related query identified.\nPlease enter your PAC ID (Example: pac001617)", "bot");
+      detectedIntent = "Incentive related query";
+      addMessage("Incentive related query identified.\nPlease enter your PAC ID (Example: pac001617)", "bot");
       step = "pac";
     }
     else if (intent === "AMBIGUOUS") {
@@ -200,16 +199,15 @@ function processInput(userText) {
   }
   else if (step === "pac") {
     if (isValidPAC(userText)) {
-      addMessage("✅ PAC ID accepted: " + userText.toLowerCase(), "bot");
-      addMessage(detectedIntent + "\nThis will be processed further in the next step.", "bot");
+      addMessage("PAC ID accepted: " + userText.toLowerCase(), "bot");
+      addMessage(detectedIntent + "\nThis will be processed further.", "bot");
       step = "done";
     } else {
-      addMessage("❌ Invalid PAC ID format.\nPlease enter again (Example: pac001617)", "bot");
+      addMessage("Invalid PAC ID format.\nPlease enter again (Example: pac001617)", "bot");
     }
   }
 }
 
-// Send button handler
 function sendMessage() {
   if (input.value.trim() !== "") {
     const text = input.value.trim();
@@ -218,7 +216,6 @@ function sendMessage() {
   }
 }
 
-// Enter key support
 input.addEventListener("keydown", function(e) {
   if (e.key === "Enter") sendMessage();
 });
